@@ -1,0 +1,7 @@
+telethon
+replit
+flask
+keep-alive
+asyncio
+matplotlib
+pytz
