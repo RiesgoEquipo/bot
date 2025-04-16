@@ -198,7 +198,7 @@ def get_truora_status():
     except Exception as e:
         return f"⚠️ *Truora*: Error al consultar ({str(e)})"
 
-# Verificación del estado de servicios de pasarela de pago@client.on(events.NewMessage(pattern=r'^KURO$', chats=[group_id_to_forward]))
+@client.on(events.NewMessage(pattern=r'^KURO$', chats=[group_id_to_forward]))
 async def check_services_status(event):
     statuses = []
 
