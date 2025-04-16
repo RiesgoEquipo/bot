@@ -11,6 +11,8 @@ import matplotlib.pyplot as plt
 import io
 import pytz
 import calendar
+import requests
+
 
 # Inicializar el bot
 keep_alive()
@@ -175,8 +177,33 @@ async def handler(event):
         total_withdrawals = sum(withdrawals_count[keyword] for keyword in withdrawals_keywords)
         if total_withdrawals >= 3:
             await client.send_message(group_id_to_forward, "bot de retiros no encuentra retiros")
-            print(f"Mensaje de alerta enviado al grupo {group_id_to_forward}")
+            print(f"Mensaje de alerta enviado al grupO {group_id_to_forward}")
             withdrawals_count.clear()  # Reiniciar el contador después de enviar el mensaje
+
+# Verificación del estado de servicios de pasarela de pago
+@client.on(events.NewMessage(pattern=r'^KURO$', chats=[group_id_to_forward]))
+async def check_services_status(event):
+    services = {
+        "Truora": "https://status.truora.com/api/v2/status.json",
+        "Kushki": "https://status.kushkipagos.com/api/v2/status.json",
+        "Transbank": "https://status.transbankdevelopers.cl/api/v2/status.json",
+    }
+
+    statuses = []
+    for name, url in services.items():
+        try:
+            response = requests.get(url, timeout=5)
+            data = response.json()
+            status = data['status']['description']
+            emoji = "🟢" if "Operational" in status else "🟡" if "Degraded" in status else "🔴"
+            statuses.append(f"{emoji} *{name}*: {status}")
+        except Exception as e:
+            statuses.append(f"⚠️ *{name}*: Error al consultar ({str(e)})")
+
+    message = "**Estado actual de servicios de pasarelas:**\n\n" + "\n".join(statuses)
+    await client.send_message(event.chat_id, message, parse_mode="Markdown")
+
+
 
 # Main
 async def main():
