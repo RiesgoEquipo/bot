@@ -12,6 +12,7 @@ import io
 import pytz
 import calendar
 import requests
+from bs4 import BeautifulSoup
 
 
 # Inicializar el bot
@@ -180,17 +181,38 @@ async def handler(event):
             print(f"Mensaje de alerta enviado al grupO {group_id_to_forward}")
             withdrawals_count.clear()  # Reiniciar el contador después de enviar el mensaje
 
-# Verificación del estado de servicios de pasarela de pago
-@client.on(events.NewMessage(pattern=r'^KURO$', chats=[group_id_to_forward]))
+def get_truora_status():
+    try:
+        url = "https://status.truora.com"
+        response = requests.get(url, timeout=5)
+        soup = BeautifulSoup(response.text, 'html.parser')
+
+        # Busca el estado general (ej. "All systems Operational")
+        status_element = soup.find('div', string=lambda s: s and 'All systems' in s)
+        if status_element:
+            status_text = status_element.text.strip()
+            emoji = "🟢" if "Operational" in status_text else "🔴"
+            return f"{emoji} *Truora*: {status_text}"
+        else:
+            return "⚠️ *Truora*: No se pudo encontrar el estado en la página"
+    except Exception as e:
+        return f"⚠️ *Truora*: Error al consultar ({str(e)})"
+
+# Verificación del estado de servicios de pasarela de pago@client.on(events.NewMessage(pattern=r'^KURO$', chats=[group_id_to_forward]))
 async def check_services_status(event):
-    services = {
-        "Truora": "https://status.truora.com/api/v2/status.json",
+    statuses = []
+
+    # Truora con scraping
+    truora_status = get_truora_status()
+    statuses.append(truora_status)
+
+    # Resto de servicios con API JSON
+    other_services = {
         "Kushki": "https://status.kushkipagos.com/api/v2/status.json",
         "Transbank": "https://status.transbankdevelopers.cl/api/v2/status.json",
     }
 
-    statuses = []
-    for name, url in services.items():
+    for name, url in other_services.items():
         try:
             response = requests.get(url, timeout=5)
             data = response.json()
@@ -201,7 +223,7 @@ async def check_services_status(event):
             statuses.append(f"⚠️ *{name}*: Error al consultar ({str(e)})")
 
     message = "**Estado actual de servicios de pasarelas:**\n\n" + "\n".join(statuses)
-    await client.send_message(event.chat_id, message, parse_mode="Markdown")
+    await client.send_message(event.chat_id, message, parse_mode='Markdown')
 
 
 
@@ -216,3 +238,4 @@ async def main():
 
 with client:
     client.loop.run_until_complete(main())
+
