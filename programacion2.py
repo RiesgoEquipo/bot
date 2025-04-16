@@ -10,7 +10,6 @@ import asyncio
 import matplotlib.pyplot as plt
 import io
 import pytz
-import calendar
 import aiohttp
 
 # Inicializar el bot
@@ -118,21 +117,30 @@ async def monitor_services():
         await asyncio.sleep(300)
 
 # Manejador de mensajes
-@client.on(events.NewMessage(chats=[group_id_to_monitor1, group_id_to_monitor2, group_id_to_monitor3]))
+@client.on(events.NewMessage(chats=[
+    group_id_to_monitor1,
+    group_id_to_monitor2,
+    group_id_to_monitor3,
+    group_id_to_forward  # también escuchamos este grupo para el comando status
+]))
 async def handler(event):
     immediate_keywords = ["error", "action"]
     global last_reset_time
     message = event.message.text or event.message.message
     message = message.lower().strip()
 
-    # 🟢 Comando status
-    if message == "status":
+    # 🟢 Comando status SOLO en el grupo destino
+    if event.chat_id == group_id_to_forward and message == ":V":
         down_services = await check_services_status()
         if down_services:
             msg = "⚠️ *Servicios caídos actualmente:*\n" + "\n".join(f"- {s}" for s in down_services)
         else:
             msg = "✅ Todos los servicios están operativos."
         await event.reply(msg, parse_mode='Markdown')
+        return
+
+    # Si el mensaje no viene de los grupos monitoreados, ignorar
+    if event.chat_id not in [group_id_to_monitor1, group_id_to_monitor2, group_id_to_monitor3]:
         return
 
     # 🚨 Alertas por keywords
