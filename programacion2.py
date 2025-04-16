@@ -116,21 +116,20 @@ async def monitor_services():
 
         await asyncio.sleep(300)
 
-# Manejador de mensajes
+# Manejador de mensajes (status solo en group_id_to_forward)
 @client.on(events.NewMessage(chats=[
     group_id_to_monitor1,
     group_id_to_monitor2,
     group_id_to_monitor3,
-    group_id_to_forward  # también escuchamos este grupo para el comando status
+    group_id_to_forward
 ]))
 async def handler(event):
-    immediate_keywords = ["error", "action"]
     global last_reset_time
     message = event.message.text or event.message.message
     message = message.lower().strip()
 
-    # 🟢 Comando status SOLO en el grupo destino
-    if event.chat_id == group_id_to_forward and message == "PacMan":
+    # Comando "status" solo si es en group_id_to_forward
+    if event.chat_id == group_id_to_forward and message == "status":
         down_services = await check_services_status()
         if down_services:
             msg = "⚠️ *Servicios caídos actualmente:*\n" + "\n".join(f"- {s}" for s in down_services)
@@ -139,11 +138,12 @@ async def handler(event):
         await event.reply(msg, parse_mode='Markdown')
         return
 
-    # Si el mensaje no viene de los grupos monitoreados, ignorar
+    # Si no es uno de los grupos monitoreados (para alertas o retiros), ignorar
     if event.chat_id not in [group_id_to_monitor1, group_id_to_monitor2, group_id_to_monitor3]:
         return
 
-    # 🚨 Alertas por keywords
+    # Alertas de incidencias
+    immediate_keywords = ["error", "action"]
     if any(keyword in message for keyword in immediate_keywords):
         new_message = f"**¡ALERTA!** Se ha detectado una incidencia:\n\n{message}"
         await client.send_message(group_id_to_forward, new_message, parse_mode='Markdown')
@@ -151,7 +151,7 @@ async def handler(event):
 
     print(f"Mensaje recibido: {message}")
 
-    # 📊 Lógica de retiros
+    # Panel al día
     withdrawals_keywords = [
         "no new customers on waiting list withdrawals under 100k",
         "no new customers on waiting list withdrawals under 300k"
