@@ -130,7 +130,7 @@ async def handler(event):
     message = message.lower().strip()
 
     # 🟢 Comando status SOLO en el grupo destino
-    if event.chat_id == group_id_to_forward and message == ":V":
+    if event.chat_id == group_id_to_forward and message == "PacMan":
         down_services = await check_services_status()
         if down_services:
             msg = "⚠️ *Servicios caídos actualmente:*\n" + "\n".join(f"- {s}" for s in down_services)
