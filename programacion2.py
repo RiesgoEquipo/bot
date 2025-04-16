@@ -75,59 +75,7 @@ def plot_no_aplica_weekday_graph(weekday_data):
 async def send_daily_withdrawals_report():
     """Envía un gráfico de 'withdrawals' cada medianoche."""
     while True:
-        now_utc = datetime.now(timezone.utc)import os
-from telethon.sync import TelegramClient
-from telethon.sessions import StringSession
-from telethon import events
-import sys
-from keep_alive import keep_alive
-from collections import defaultdict
-from datetime import datetime, timedelta, timezone
-import asyncio
-import matplotlib.pyplot as plt
-import io
-import pytz
-import calendar
-
-# Inicializar el bot
-keep_alive()
-
-# Configura la consola para utilizar UTF-8
-sys.stdout.reconfigure(encoding='utf-8')
-
-# Cargar las variables de entorno
-string_session = os.getenv('STRING_SESSION')
-api_id = os.getenv('API_ID')
-api_hash = os.getenv('API_HASH')
-group_id_to_monitor1 = int(os.getenv('GROUP_ID_TO_MONITOR1'))
-group_id_to_monitor2 = int(os.getenv('GROUP_ID_TO_MONITOR2'))
-group_id_to_monitor3 = int(os.getenv('GROUP_ID_TO_MONITOR3'))
-group_id_to_forward = int(os.getenv('GROUP_ID_TO_FORWARD'))
-
-client = TelegramClient(StringSession(string_session), api_id, api_hash)
-
-# Contadores
-no_aplica_count = 0
-withdrawals_count = defaultdict(int)  # Contador para "withdrawals"
-withdrawals_hourly_count = defaultdict(int)  # Para almacenar los conteos por hora
-no_aplica_weekday_count = defaultdict(int)  # Contador de "no aplica" por día de la semana (0: lunes, 1: martes, etc.)
-last_reset_time = datetime.now(timezone.utc)
-
-chile_tz = pytz.timezone('America/Santiago')
-
-# Funciones para los gráficos de barras
-def plot_withdrawals_graph(hourly_data):
-    """Genera un gráfico de barras con los conteos de withdrawals por hora."""
-    hours = list(hourly_data.keys())
-    counts = list(hourly_data.values())
-
-    plt.figure(figsize=(8, 5))
-    plt.bar(hours, counts, color='blue')  # Gráfico de barras
-    plt.xlabel('Hora del día')
-    plt.ylabel('Cantidad de veces el panel al dia')
-    plt.title('Panel al dia hora a hora')
-
-    buffer = io.BytesIO()
+        now_utc = datetime.now(timezone.utc)
         now_chile = now_utc.astimezone(chile_tz)
 
         # Comprobar si es medianoche en la zona horaria de Chile (00:00 hora local)
