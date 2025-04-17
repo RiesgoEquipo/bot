@@ -183,26 +183,28 @@ async def handler(event):
 
 def get_truora_status():
     try:
-        url = "https://status.truora.com"
+        url = "https://stats.uptimerobot.com/api/getMonitorList/VG3Y9Cgwwq?page=1"
         response = requests.get(url, timeout=5)
-        soup = BeautifulSoup(response.text, 'html.parser')
+        data = response.json()
 
-        # DEBUG: imprime las 10 primeras líneas del texto
-        lines = soup.get_text().splitlines()
-        print("Contenido de la página Truora:")
-        for line in lines[:10]:
-            print(line.strip())
+        # Obtenemos los conteos de monitores
+        counts = data.get("counts", {})
+        up = counts.get("up", 0)
+        down = counts.get("down", 0)
+        paused = counts.get("paused", 0)
 
-        # Intenta encontrar el texto de estado
-        status_element = soup.find('div', string=lambda s: s and 'All systems' in s)
-        if status_element:
-            status_text = status_element.text.strip()
-            emoji = "🟢" if "Operational" in status_text else "🔴"
-            return f"{emoji} *Truora*: {status_text}"
+        # Emoji general
+        if down == 0:
+            emoji = "🟢"
+        elif up > 0 and down > 0:
+            emoji = "🟡"
         else:
-            return "⚠️ *Truora*: No se pudo encontrar el estado en la página"
+            emoji = "🔴"
+
+        return f"{emoji} *Truora*: {up} arriba, {down} abajo, {paused} pausado(s)"
     except Exception as e:
         return f"⚠️ *Truora*: Error al consultar ({str(e)})"
+
 
 
 @client.on(events.NewMessage(pattern=r'^KURO$', chats=[group_id_to_forward]))
