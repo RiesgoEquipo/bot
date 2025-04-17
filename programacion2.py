@@ -187,13 +187,13 @@ def get_truora_status():
         response = requests.get(url, timeout=5)
         data = response.json()
 
-        # Obtenemos los conteos de monitores
-        counts = data.get("counts", {})
+        # Acceder correctamente al campo de estadísticas
+        counts = data.get("statistics", {}).get("counts", {})
         up = counts.get("up", 0)
         down = counts.get("down", 0)
         paused = counts.get("paused", 0)
 
-        # Emoji general
+        # Elegimos el emoji correcto
         if down == 0:
             emoji = "🟢"
         elif up > 0 and down > 0:
@@ -204,6 +204,7 @@ def get_truora_status():
         return f"{emoji} *Truora*: {up} arriba, {down} abajo, {paused} pausado(s)"
     except Exception as e:
         return f"⚠️ *Truora*: Error al consultar ({str(e)})"
+
 
 
 
