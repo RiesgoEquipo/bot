@@ -207,8 +207,8 @@ def get_truora_status():
 
 
 
-
-@client.on(events.NewMessage(pattern=r'^KURO$', chats=[group_id_to_forward]))
+allowed_groups = [group_id_to_forward, group_id_to_monitor3]
+@client.on(events.NewMessage(pattern=r'^KURO$', chats=allowed_groups))
 async def check_services_status(event):
     statuses = []
 
