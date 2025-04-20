@@ -18,12 +18,13 @@ import subprocess
 def buscar_usuario_con_sherlock(nick):
     try:
         result = subprocess.run(
-            ["python3", "sherlock.py", nick],
+            ["sherlock", nick],
             capture_output=True, text=True, timeout=60
         )
         return result.stdout
     except Exception as e:
         return f"Error al ejecutar Sherlock: {e}"
+
 
 
 # Inicializar el bot
