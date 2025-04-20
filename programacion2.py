@@ -19,7 +19,7 @@ def buscar_usuario_con_sherlock(nick):
     try:
         result = subprocess.run(
             ["sherlock", nick],
-            capture_output=True, text=True, timeout=60
+            capture_output=True, text=True, timeout=500
         )
         return result.stdout
     except Exception as e:
