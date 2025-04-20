@@ -18,7 +18,7 @@ import subprocess
 def buscar_usuario_con_sherlock(nick):
     try:
         result = subprocess.run(
-            ["python3", "sherlock/sherlock.py", nick],
+            ["python3", "sherlock.py", nick],
             capture_output=True, text=True, timeout=60
         )
         return result.stdout
