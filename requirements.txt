@@ -6,3 +6,4 @@ asyncio
 matplotlib
 pytz
 beautifulsoup4
+Sherlook
