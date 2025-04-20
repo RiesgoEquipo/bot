@@ -13,10 +13,18 @@ import pytz
 import calendar
 import requests
 from bs4 import BeautifulSoup
-from sherlook import Sherlook
+import subprocess
 
+def buscar_usuario_con_sherlock(nick):
+    try:
+        result = subprocess.run(
+            ["python3", "sherlock/sherlock.py", nick],
+            capture_output=True, text=True, timeout=60
+        )
+        return result.stdout
+    except Exception as e:
+        return f"Error al ejecutar Sherlock: {e}"
 
-sherlook = Sherlook()
 
 # Inicializar el bot
 keep_alive()
@@ -43,28 +51,6 @@ no_aplica_weekday_count = defaultdict(int)  # Contador de "no aplica" por día d
 last_reset_time = datetime.now(timezone.utc)
 
 chile_tz = pytz.timezone('America/Santiago')
-sherlook = Sherlook()
-
-@client.on(events.NewMessage(pattern=r'^/KURORO\s+(.+)', chats=[group_id_to_forward]))
-async def kuroro_sherlook_handler(event):
-    try:
-        # Extraer el nick del mensaje
-        match = event.pattern_match
-        nick = match.group(1).strip()
-
-        # Analizar el nick usando Sherlook
-        analysis = sherlook.analyze(nick)
-
-        # Formatear el resultado para mostrarlo bonito
-        result_lines = [f"*Análisis de Sherlook para:* `{nick}`"]
-        for key, value in analysis.items():
-            result_lines.append(f"- *{key}*: `{value}`")
-
-        result_message = "\n".join(result_lines)
-
-        await client.send_message(event.chat_id, result_message, parse_mode='Markdown')
-    except Exception as e:
-        await client.send_message(event.chat_id, f"❌ Error al analizar con Sherlook: {e}")
 
 # Funciones para los gráficos de barras
 def plot_withdrawals_graph(hourly_data):
@@ -205,6 +191,17 @@ async def handler(event):
             await client.send_message(group_id_to_forward, "bot de retiros no encuentra retiros")
             print(f"Mensaje de alerta enviado al grupO {group_id_to_forward}")
             withdrawals_count.clear()  # Reiniciar el contador después de enviar el mensaje
+@client.on(events.NewMessage(pattern=r'^/KURORO\s+(.+)', chats=[group_id_to_forward]))
+async def kuroro_sherlock_handler(event):
+    try:
+        nick = event.pattern_match.group(1).strip()
+        resultado = buscar_usuario_con_sherlock(nick)
+        if resultado:
+            await client.send_message(event.chat_id, f"🔎 Resultados de Sherlock para `{nick}`:\n\n```{resultado}```", parse_mode="Markdown")
+        else:
+            await client.send_message(event.chat_id, f"No se encontraron resultados para `{nick}`.")
+    except Exception as e:
+        await client.send_message(event.chat_id, f"❌ Error al analizar con Sherlock: {e}")
 
 def get_truora_status():
     try:
