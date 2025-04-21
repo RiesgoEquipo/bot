@@ -14,6 +14,7 @@ import calendar
 import requests
 from bs4 import BeautifulSoup
 import subprocess
+from serpapi import GoogleSearch
 
 def buscar_usuario_con_sherlock(nick):
     try:
@@ -258,7 +259,36 @@ async def check_services_status(event):
     message = "**Estado actual de servicios de pasarelas:**\n\n" + "\n".join(statuses)
     await client.send_message(event.chat_id, message, parse_mode='Markdown')
 
+def buscar_perfil_facebook(nombre):
+    """Busca perfiles de Facebook usando SerpAPI y retorna una lista de enlaces."""
+    api_key = "171d9aef80acd2ce6924cb403e3dc64fa8530a9577b6bf5e6fdd9f878b355b32"
+    params = {
+        "q": f"site:facebook.com {nombre}",
+        "engine": "google",
+        "api_key": api_key
+    }
+    search = GoogleSearch(params)
+    resultados = search.get_dict()
+    links = []
+    for result in resultados.get("organic_results", []):
+        if "facebook.com" in result.get("link", ""):
+            links.append(result.get("link"))
+    return links
 
+@client.on(events.NewMessage(pattern=r'^/FACEBOOK\s+(.+)', chats=allowed_groups))
+async def facebook_profile_search_handler(event):
+    nombre = event.pattern_match.group(1).strip()
+    await client.send_message(event.chat_id, f"🔎 Buscando perfiles de Facebook para: `{nombre}`...", parse_mode="Markdown")
+    try:
+        links = buscar_perfil_facebook(nombre)
+        if links:
+            msg = "**Resultados de búsqueda de perfiles de Facebook:**\n\n"
+            msg += "\n".join([f"{i+1}. {link}" for i, link in enumerate(links)])
+            await client.send_message(event.chat_id, msg, parse_mode="Markdown")
+        else:
+            await client.send_message(event.chat_id, f"No se encontraron perfiles de Facebook para `{nombre}`.")
+    except Exception as e:
+        await client.send_message(event.chat_id, f"❌ Error al buscar perfiles de Facebook: {e}")
 
 # Main
 async def main():

@@ -7,3 +7,4 @@ matplotlib
 pytz
 beautifulsoup4
 sherlock-project
+google-search-results==2.0.0
