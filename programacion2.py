@@ -193,7 +193,7 @@ async def handler(event):
             await client.send_message(group_id_to_forward, "bot de retiros no encuentra retiros")
             print(f"Mensaje de alerta enviado al grupO {group_id_to_forward}")
             withdrawals_count.clear()  # Reiniciar el contador después de enviar el mensaje
-@client.on(events.NewMessage(pattern=r'^/KURORO\s+(.+)', chats=[group_id_to_forward]))
+@client.on(events.NewMessage(pattern=r'^/nick\s+(.+)', chats=[group_id_to_forward]))
 async def kuroro_sherlock_handler(event):
     try:
         nick = event.pattern_match.group(1).strip()
@@ -232,7 +232,7 @@ def get_truora_status():
 
 
 allowed_groups = [group_id_to_forward, group_id_to_monitor3]
-@client.on(events.NewMessage(pattern=r'^KURO$', chats=allowed_groups))
+@client.on(events.NewMessage(pattern=r'^/servicios$', chats=allowed_groups))
 async def check_services_status(event):
     statuses = []
 
@@ -275,7 +275,7 @@ def buscar_perfil_facebook(nombre):
             links.append(result.get("link"))
     return links
 
-@client.on(events.NewMessage(pattern=r'^/FACEBOOK\s+(.+)', chats=allowed_groups))
+@client.on(events.NewMessage(pattern=r'^/perfil\s+(.+)', chats=allowed_groups))
 async def facebook_profile_search_handler(event):
     nombre = event.pattern_match.group(1).strip()
     await client.send_message(event.chat_id, f"🔎 Buscando perfiles de Facebook para: `{nombre}`...", parse_mode="Markdown")
