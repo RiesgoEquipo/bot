@@ -10,12 +10,16 @@ from keep_alive import keep_alive
 keep_alive()
 sys.stdout.reconfigure(encoding='utf-8')
 
-# Cargar variables de entorno
+# 🔐 VARIABLES DE ENTORNO
 string_session = os.getenv('STRING_SESSION')
 api_id = os.getenv('API_ID')
 api_hash = os.getenv('API_HASH')
-group_id_to_forward = int(os.getenv('GROUP_ID_TO_FORWARD'))
+group_id_to_monitor1 = int(os.getenv('GROUP_ID_TO_MONITOR1'))
+group_id_to_monitor2 = int(os.getenv('GROUP_ID_TO_MONITOR2'))
 group_id_to_monitor3 = int(os.getenv('GROUP_ID_TO_MONITOR3'))
+group_id_to_forward = int(os.getenv('GROUP_ID_TO_FORWARD'))
+
+client = TelegramClient(StringSession(string_session), api_id, api_hash)
 
 # Inicializar el cliente de Telegram
 client = TelegramClient(StringSession(string_session), api_id, api_hash)
@@ -120,6 +124,20 @@ async def check_services_status(event):
     message = "**Estado actual de servicios de pasarelas:**\n\n" + "\n".join(statuses)
     await client.send_message(event.chat_id, message, parse_mode='Markdown')
 
+
+
+
+# 📡 MONITOREO DE MENSAJES CON PALABRAS CLAVE
+# -----------------------------------
+@client.on(events.NewMessage(chats=[group_id_to_monitor1, group_id_to_monitor2, group_id_to_monitor3]))
+async def handler(event):
+    keywords = ["error", "action"]
+    message = (event.message.text or event.message.message).lower()
+
+    if any(k in message for k in keywords):
+        alerta = f"**¡ALERTA!** Se ha detectado una incidencia:\n\n{message}"
+        await client.send_message(group_id_to_forward, alerta, parse_mode='Markdown')
+        print(f"🔔 Alerta reenviada desde {event.chat_id}")
 # Función principal
 async def main():
     await client.start()
