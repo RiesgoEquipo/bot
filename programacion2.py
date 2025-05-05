@@ -34,7 +34,6 @@ group_id_to_forward = int(os.getenv('GROUP_ID_TO_FORWARD'))
 group_id_to_monitor4  = int(os.getenv('PETE'))
 group_id_to_monitor5  = int(os.getenv('GIO'))
 
-client = TelegramClient(StringSession(string_session), api_id, api_hash)
 
 # Inicializar el cliente de Telegram
 client = TelegramClient(StringSession(string_session), api_id, api_hash)
