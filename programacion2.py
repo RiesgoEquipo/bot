@@ -32,7 +32,7 @@ group_id_to_monitor2 = int(os.getenv('GROUP_ID_TO_MONITOR2'))
 group_id_to_monitor3 = int(os.getenv('GROUP_ID_TO_MONITOR3'))
 group_id_to_forward = int(os.getenv('GROUP_ID_TO_FORWARD'))
 group_id_to_monitor4  = int(os.getenv('PETE'))
-group_id_to_monitor5  = int(os.getenv('GIO'))
+group_id_to_monitor5  = str(os.getenv('GIO'))
 
 
 # Inicializar el cliente de Telegram
