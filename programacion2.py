@@ -5,6 +5,19 @@ from telethon.sync import TelegramClient
 from telethon.sessions import StringSession
 from telethon import events
 from keep_alive import keep_alive
+from bs4 import BeautifulSoup
+import subprocess
+from serpapi import GoogleSearch
+
+def buscar_usuario_con_sherlock(nick):
+    try:
+        result = subprocess.run(
+            ["sherlock", nick],
+            capture_output=True, text=True, timeout=500
+        )
+        return result.stdout
+    except Exception as e:
+        return f"Error al ejecutar Sherlock: {e}"
 
 # Inicializar el bot
 keep_alive()
@@ -124,9 +137,46 @@ async def check_services_status(event):
     message = "**Estado actual de servicios de pasarelas:**\n\n" + "\n".join(statuses)
     await client.send_message(event.chat_id, message, parse_mode='Markdown')
 
+@client.on(events.NewMessage(pattern=r'^/nick\s+(.+)', chats=[group_id_to_forward]))
+async def handler_sherlock(event):
+    nick = event.pattern_match.group(1).strip()
+    await event.respond("🔍 Buscando información...")
+    resultado = buscar_usuario_con_sherlock(nick)
+    if resultado:
+        await event.respond(f"🔎 Resultados de Sherlock para `{nick}`:\n\n```{resultado}```", parse_mode="Markdown")
+    else:
+        await event.respond(f"❌ No se encontraron resultados para `{nick}`.")
 
 
-
+def buscar_perfil_facebook(nombre):
+    """Busca perfiles de Facebook usando SerpAPI y retorna una lista de enlaces."""
+    api_key = "171d9aef80acd2ce6924cb403e3dc64fa8530a9577b6bf5e6fdd9f878b355b32"
+    params = {
+        "q": f"site:facebook.com {nombre}",
+        "engine": "google",
+        "api_key": api_key
+    }
+    search = GoogleSearch(params)
+    resultados = search.get_dict()
+    links = []
+    for result in resultados.get("organic_results", []):
+        if "facebook.com" in result.get("link", ""):
+            links.append(result.get("link"))
+    return links
+@client.on(events.NewMessage(pattern=r'^/perfil\s+(.+)', chats=allowed_groups))
+async def facebook_profile_search_handler(event):
+    nombre = event.pattern_match.group(1).strip()
+    await client.send_message(event.chat_id, f"🔎 Buscando perfiles de Facebook para: {nombre}...", parse_mode="Markdown")
+    try:
+        links = buscar_perfil_facebook(nombre)
+        if links:
+            msg = "**Resultados de búsqueda de perfiles de Facebook:**\n\n"
+            msg += "\n".join([f"{i+1}. {link}" for i, link in enumerate(links)])
+            await client.send_message(event.chat_id, msg, parse_mode="Markdown")
+        else:
+            await client.send_message(event.chat_id, f"No se encontraron perfiles de Facebook para {nombre}.")
+    except Exception as e:
+        await client.send_message(event.chat_id, f"❌ Error al buscar perfiles de Facebook: {e}")
 # 📡 MONITOREO DE MENSAJES CON PALABRAS CLAVE
 # -----------------------------------
 @client.on(events.NewMessage(chats=[group_id_to_monitor1, group_id_to_monitor2, group_id_to_monitor3]))
