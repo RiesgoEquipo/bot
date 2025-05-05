@@ -31,6 +31,8 @@ group_id_to_monitor1 = int(os.getenv('GROUP_ID_TO_MONITOR1'))
 group_id_to_monitor2 = int(os.getenv('GROUP_ID_TO_MONITOR2'))
 group_id_to_monitor3 = int(os.getenv('GROUP_ID_TO_MONITOR3'))
 group_id_to_forward = int(os.getenv('GROUP_ID_TO_FORWARD'))
+group_id_to_monitor4  = int(os.getenv('PETE'))
+group_id_to_monitor5  = int(os.getenv('GIO'))
 
 client = TelegramClient(StringSession(string_session), api_id, api_hash)
 
@@ -38,7 +40,7 @@ client = TelegramClient(StringSession(string_session), api_id, api_hash)
 client = TelegramClient(StringSession(string_session), api_id, api_hash)
 
 # Grupos permitidos para usar comandos
-allowed_groups = [group_id_to_forward, group_id_to_monitor3]
+allowed_groups = [group_id_to_forward, group_id_to_monitor3,group_id_to_monitor4,group_id_to_monitor5]
 
 # Funciones para obtener el estado de los servicios
 def get_truora_status():
