@@ -130,9 +130,7 @@ async def check_services_status(event):
     statuses = [
         get_truora_status(),
         get_astropay_status(),
-        """ error """
         get_kushki_status(),
-        """ error """
         get_transbank_status(),
         get_skinsback_status(),
         get_coinpaid_status()
