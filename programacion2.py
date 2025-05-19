@@ -70,7 +70,7 @@ def get_astropay_status():
         }.get(indicator, "❓")
         return f"{emoji} *AstroPay*: {description}"
     except Exception as e:
-        return f"⚠️ *AstroPay*: Error al consultar estado ({e})"
+        return f"⚠️ *AstroPay*: Error al consultar estado  ({e})"
 
 def get_kushki_status():
     try:
