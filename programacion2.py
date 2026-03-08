@@ -26,12 +26,11 @@ def buscar_usuario_con_sherlock(nick):
         return f"Error al ejecutar Sherlock: {e}"
 
 
-# Inicializar el bot
 keep_alive()
 sys.stdout.reconfigure(encoding='utf-8')
 
 
-# 🔐 VARIABLES DE ENTORNO
+# VARIABLES DE ENTORNO
 string_session = os.getenv('STRING_SESSION')
 api_id = os.getenv('API_ID')
 api_hash = os.getenv('API_HASH')
@@ -42,19 +41,13 @@ group_id_to_monitor3 = int(os.getenv('GROUP_ID_TO_MONITOR3'))
 
 group_id_to_forward = int(os.getenv('GROUP_ID_TO_FORWARD'))
 
-group_id_to_monitor4 = int(os.getenv('PETE'))
-group_id_to_monitor5 = str(os.getenv('GIO'))
-
-# 📧 GMAIL
 gmail_user = os.getenv("GMAIL_USER")
 gmail_pass = os.getenv("GMAIL_PASS")
 
 
-# Inicializar cliente Telegram
 client = TelegramClient(StringSession(string_session), api_id, api_hash)
 
 
-# Grupos permitidos para comandos
 allowed_groups = [
     group_id_to_forward,
     group_id_to_monitor3,
@@ -62,10 +55,6 @@ allowed_groups = [
     group_id_to_monitor5
 ]
 
-
-# ----------------------------
-# ESTADO DE SERVICIOS
-# ----------------------------
 
 def get_truora_status():
     try:
@@ -181,10 +170,6 @@ def get_coinpaid_status():
         return f"⚠️ *CoinPaid*: Error ({e})"
 
 
-# ----------------------------
-# COMANDO /servicios
-# ----------------------------
-
 @client.on(events.NewMessage(pattern=r'^/servicios$', chats=allowed_groups))
 async def check_services_status(event):
 
@@ -201,10 +186,6 @@ async def check_services_status(event):
 
     await client.send_message(event.chat_id, message, parse_mode='Markdown')
 
-
-# ----------------------------
-# COMANDO /nick
-# ----------------------------
 
 @client.on(events.NewMessage(pattern=r'^/nick\s+(.+)', chats=[group_id_to_forward]))
 async def handler_sherlock(event):
@@ -226,91 +207,37 @@ async def handler_sherlock(event):
         await event.respond(f"❌ No se encontraron resultados para `{nick}`.")
 
 
-# ----------------------------
-# BUSCAR FACEBOOK
-# ----------------------------
+# 📧 LEER CUERPO DEL CORREO
+def extraer_cuerpo_email(msg):
 
-def buscar_perfil_facebook(nombre):
+    cuerpo = ""
 
-    api_key = "171d9aef80acd2ce6924cb403e3dc64fa8530a9577b6bf5e6fdd9f878b355b32"
+    if msg.is_multipart():
+        for part in msg.walk():
+            content_type = part.get_content_type()
 
-    params = {
-        "q": f"site:facebook.com {nombre}",
-        "engine": "google",
-        "api_key": api_key
-    }
+            if content_type == "text/plain":
+                cuerpo = part.get_payload(decode=True).decode(errors="ignore")
+                return cuerpo
 
-    search = GoogleSearch(params)
+            if content_type == "text/html":
+                html = part.get_payload(decode=True).decode(errors="ignore")
+                soup = BeautifulSoup(html, "lxml")
+                return soup.get_text()
 
-    resultados = search.get_dict()
+    else:
+        cuerpo = msg.get_payload(decode=True).decode(errors="ignore")
 
-    links = []
-
-    for result in resultados.get("organic_results", []):
-
-        if "facebook.com" in result.get("link", ""):
-            links.append(result.get("link"))
-
-    return links
+    return cuerpo
 
 
-@client.on(events.NewMessage(pattern=r'^/perfil\s+(.+)', chats=allowed_groups))
-async def facebook_profile_search_handler(event):
-
-    nombre = event.pattern_match.group(1).strip()
-
-    await client.send_message(
-        event.chat_id,
-        f"🔎 Buscando perfiles de Facebook para: {nombre}...",
-        parse_mode="Markdown"
-    )
-
-    try:
-
-        links = buscar_perfil_facebook(nombre)
-
-        if links:
-
-            msg = "**Resultados de búsqueda de perfiles de Facebook:**\n\n"
-
-            msg += "\n".join(
-                [f"{i+1}. {link}" for i, link in enumerate(links)]
-            )
-
-            await client.send_message(event.chat_id, msg, parse_mode="Markdown")
-
-        else:
-            await client.send_message(
-                event.chat_id,
-                f"No se encontraron perfiles de Facebook para {nombre}."
-            )
-
-    except Exception as e:
-
-        await client.send_message(
-            event.chat_id,
-            f"❌ Error al buscar perfiles de Facebook: {e}"
-        )
-
-
-# ----------------------------
-# MONITOREO DE MENSAJES
-# ----------------------------
-
-
-
-# ----------------------------
 # 📧 REVISAR GMAIL
-# ----------------------------
-
 async def revisar_correos_gmail():
 
     try:
 
         mail = imaplib.IMAP4_SSL("imap.gmail.com")
-
         mail.login(gmail_user, gmail_pass)
-
         mail.select("inbox")
 
         status, mensajes = mail.search(
@@ -321,26 +248,17 @@ async def revisar_correos_gmail():
         for num in mensajes[0].split():
 
             status, data = mail.fetch(num, "(RFC822)")
-
             msg = email.message_from_bytes(data[0][1])
 
-            asunto = msg["subject"]
+            cuerpo = extraer_cuerpo_email(msg)
 
-            remitente = msg["from"]
+            cuerpo = cuerpo.strip()[:3000]
 
-            texto = f"""
-🎰 HIGH WIN ALERT
-
-📩 Asunto: {asunto}
-👤 De: {remitente}
-"""
-
-            await client.send_message(group_id_to_forward, texto)
+            await client.send_message(group_id_to_forward, cuerpo)
 
         mail.logout()
 
     except Exception as e:
-
         print("Error leyendo Gmail:", e)
 
 
@@ -352,10 +270,6 @@ async def loop_correos():
 
         await asyncio.sleep(15)
 
-
-# ----------------------------
-# MAIN
-# ----------------------------
 
 async def main():
 
