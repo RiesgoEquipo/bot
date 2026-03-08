@@ -50,9 +50,7 @@ client = TelegramClient(StringSession(string_session), api_id, api_hash)
 
 allowed_groups = [
     group_id_to_forward,
-    group_id_to_monitor3,
-    group_id_to_monitor4,
-    group_id_to_monitor5
+    group_id_to_monitor3
 ]
 
 
@@ -285,3 +283,4 @@ async def main():
 with client:
 
     client.loop.run_until_complete(main())
+
