@@ -4,6 +4,7 @@ import requests
 import asyncio
 import imaplib
 import email
+import re
 
 from telethon.sync import TelegramClient
 from telethon.sessions import StringSession
@@ -229,6 +230,31 @@ def extraer_cuerpo_email(msg):
     return cuerpo
 
 
+# 🚨 NUEVA FUNCIÓN ALERTA CASINO
+def formatear_alerta_casino(cuerpo):
+
+    def buscar(pattern):
+        match = re.search(pattern, cuerpo, re.IGNORECASE)
+        return match.group(1).strip() if match else "N/A"
+
+    player_id = buscar(r'Player ID:\s*(\d+)')
+    bet_id = buscar(r'Bet ID:\s*(\d+)')
+    bet_amount = buscar(r'Bet Amount:\s*([\d\.]+)')
+    net_win = buscar(r'Net Win Amount:\s*([\d\.]+)')
+    game = buscar(r'Game/Event:\s*(.+)')
+
+    mensaje = (
+        "🚨 *CASINO HIGH WIN ALERT* 🚨\n\n"
+        f"👤 *Player:* `{player_id}`\n"
+        f"🎟️ *Bet ID:* `{bet_id}`\n\n"
+        f"💰 *Apuesta:* `{bet_amount}`\n"
+        f"🏆 *Ganancia:* `{net_win}`\n\n"
+        f"🎮 *Juego:* _{game}_"
+    )
+
+    return mensaje
+
+
 # 📧 REVISAR GMAIL
 async def revisar_correos_gmail():
 
@@ -250,9 +276,16 @@ async def revisar_correos_gmail():
 
             cuerpo = extraer_cuerpo_email(msg)
 
-            cuerpo = cuerpo.strip()[:3000]
+            mensaje = formatear_alerta_casino(cuerpo)
 
-            await client.send_message(group_id_to_forward, cuerpo)
+            await client.send_message(
+                group_id_to_forward,
+                mensaje,
+                parse_mode="Markdown"
+            )
+
+            # marcar como leído
+            mail.store(num, '+FLAGS', '\\Seen')
 
         mail.logout()
 
@@ -283,4 +316,3 @@ async def main():
 with client:
 
     client.loop.run_until_complete(main())
-
