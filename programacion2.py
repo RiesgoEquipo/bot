@@ -13,7 +13,6 @@ from telethon import events
 from keep_alive import keep_alive
 from bs4 import BeautifulSoup
 import subprocess
-from serpapi import GoogleSearch
 
 
 def buscar_usuario_con_sherlock(nick):
@@ -55,6 +54,8 @@ allowed_groups = [
 ]
 
 
+# ------------------ STATUS SERVICIOS ------------------
+
 def get_truora_status():
     try:
         url = "https://stats.uptimerobot.com/api/getMonitorList/VG3Y9Cgwwq?page=1"
@@ -68,7 +69,6 @@ def get_truora_status():
         emoji = "🟢" if down == 0 else "🟡" if up > 0 else "🔴"
 
         return f"{emoji} *Truora*: {up} arriba, {down} abajo, {paused} pausado(s)"
-
     except Exception as e:
         return f"⚠️ *Truora*: Error ({e})"
 
@@ -79,7 +79,6 @@ def get_astropay_status():
             "https://status.astropay.com/api/v2/status.json", timeout=5)
 
         data = response.json()
-
         description = data["status"]["description"]
         indicator = data["status"]["indicator"]
 
@@ -91,7 +90,6 @@ def get_astropay_status():
         }.get(indicator, "❓")
 
         return f"{emoji} *AstroPay*: {description}"
-
     except Exception as e:
         return f"⚠️ *AstroPay*: Error ({e})"
 
@@ -102,7 +100,6 @@ def get_kushki_status():
             "https://status.kushkipagos.com/api/v2/status.json", timeout=5)
 
         data = response.json()
-
         description = data["status"]["description"]
         indicator = data["status"]["indicator"]
 
@@ -114,7 +111,6 @@ def get_kushki_status():
         }.get(indicator, "❓")
 
         return f"{emoji} *Kushki*: {description}"
-
     except Exception as e:
         return f"⚠️ *Kushki*: Error ({e})"
 
@@ -125,7 +121,6 @@ def get_transbank_status():
             "https://status.transbankdevelopers.cl/api/v2/status.json", timeout=5)
 
         data = response.json()
-
         description = data["status"]["description"]
         indicator = data["status"]["indicator"]
 
@@ -137,7 +132,6 @@ def get_transbank_status():
         }.get(indicator, "❓")
 
         return f"{emoji} *Transbank*: {description}"
-
     except Exception as e:
         return f"⚠️ *Transbank*: Error ({e})"
 
@@ -145,12 +139,7 @@ def get_transbank_status():
 def get_skinsback_status():
     try:
         response = requests.get("https://skinsback.com", timeout=5)
-
-        if response.status_code == 200:
-            return "🟢 *Skinsback*: Activo"
-        else:
-            return f"🔴 *Skinsback*: HTTP {response.status_code}"
-
+        return "🟢 *Skinsback*: Activo" if response.status_code == 200 else f"🔴 HTTP {response.status_code}"
     except Exception as e:
         return f"⚠️ *Skinsback*: Error ({e})"
 
@@ -160,11 +149,7 @@ def get_coinpaid_status():
         response = requests.get(
             "https://app.cryptoprocessing.com/api/v2/ping", timeout=5)
 
-        if response.status_code == 200:
-            return "🟢 *CoinPaid*: Activo"
-        else:
-            return f"🔴 *CoinPaid*: HTTP {response.status_code}"
-
+        return "🟢 *CoinPaid*: Activo" if response.status_code == 200 else f"🔴 HTTP {response.status_code}"
     except Exception as e:
         return f"⚠️ *CoinPaid*: Error ({e})"
 
@@ -181,81 +166,89 @@ async def check_services_status(event):
         get_coinpaid_status()
     ]
 
-    message = "**Estado actual de servicio de pasarelas:**\n\n" + "\n".join(statuses)
+    message = "**Estado actual de servicios:**\n\n" + "\n".join(statuses)
 
     await client.send_message(event.chat_id, message, parse_mode='Markdown')
 
+
+# ------------------ SHERLOCK ------------------
 
 @client.on(events.NewMessage(pattern=r'^/nick\s+(.+)', chats=[group_id_to_forward]))
 async def handler_sherlock(event):
 
     nick = event.pattern_match.group(1).strip()
-
-    await event.respond("🔍 Buscando información...")
+    await event.respond("🔍 Buscando...")
 
     resultado = buscar_usuario_con_sherlock(nick)
 
-    if resultado:
-
-        await event.respond(
-            f"🔎 Resultados de Sherlock para `{nick}`:\n\n```{resultado}```",
-            parse_mode="Markdown"
-        )
-
-    else:
-        await event.respond(f"❌ No se encontraron resultados para `{nick}`.")
+    await event.respond(
+        f"```{resultado}```",
+        parse_mode="Markdown"
+    )
 
 
-# 📧 LEER CUERPO DEL CORREO
+# ------------------ EMAIL ------------------
+
 def extraer_cuerpo_email(msg):
-
-    cuerpo = ""
 
     if msg.is_multipart():
         for part in msg.walk():
-            content_type = part.get_content_type()
+            if part.get_content_type() == "text/plain":
+                return part.get_payload(decode=True).decode(errors="ignore")
 
-            if content_type == "text/plain":
-                cuerpo = part.get_payload(decode=True).decode(errors="ignore")
-                return cuerpo
-
-            if content_type == "text/html":
+            if part.get_content_type() == "text/html":
                 html = part.get_payload(decode=True).decode(errors="ignore")
-                soup = BeautifulSoup(html, "lxml")
-                return soup.get_text()
-
+                return BeautifulSoup(html, "lxml").get_text()
     else:
-        cuerpo = msg.get_payload(decode=True).decode(errors="ignore")
+        return msg.get_payload(decode=True).decode(errors="ignore")
 
-    return cuerpo
+    return ""
 
 
-# 🚨 NUEVA FUNCIÓN ALERTA CASINO
+# CASINO
 def formatear_alerta_casino(cuerpo):
 
     def buscar(pattern):
         match = re.search(pattern, cuerpo, re.IGNORECASE)
         return match.group(1).strip() if match else "N/A"
 
-    player_id = buscar(r'Player ID:\s*(\d+)')
-    bet_id = buscar(r'Bet ID:\s*(\d+)')
-    bet_amount = buscar(r'Bet Amount:\s*([\d\.]+)')
-    net_win = buscar(r'Net Win Amount:\s*([\d\.]+)')
-    game = buscar(r'Game/Event:\s*(.+)')
-
-    mensaje = (
+    return (
         "🚨 *CASINO HIGH WIN ALERT* 🚨\n\n"
-        f"👤 *Player:* `{player_id}`\n"
-        f"🎟️ *Bet ID:* `{bet_id}`\n\n"
-        f"💰 *Apuesta:* `{bet_amount}`\n"
-        f"🏆 *Ganancia:* `{net_win}`\n\n"
-        f"🎮 *Juego:* _{game}_"
+        f"👤 `{buscar(r'Player ID:\s*(\\d+)')}`\n"
+        f"💰 `{buscar(r'Bet Amount:\s*([\\d\\.]+)')}`\n"
+        f"🏆 `{buscar(r'Net Win Amount:\s*([\\d\\.]+)')}`"
     )
 
-    return mensaje
+
+# SPORT
+def formatear_alerta_sport(cuerpo):
+
+    def buscar(label):
+        match = re.search(rf"{label}:\s*\n(.+)", cuerpo, re.IGNORECASE)
+        return match.group(1).strip() if match else "N/A"
+
+    player_id = buscar("Player ID")
+    username = buscar("Username")
+    bet_id = buscar("Bet ID")
+    bet_amount = buscar("Bet Amount")
+    net_win = buscar("Net Win Amount")
+    sport = buscar("Sport")
+    eventos = buscar("Game/Event")
+
+    return (
+        "🚨 *SPORT HIGH WIN ALERT* 🚨\n\n"
+        f"👤 `{player_id}`\n"
+        f"📧 `{username}`\n"
+        f"🎟️ `{bet_id}`\n\n"
+        f"💰 `{bet_amount}`\n"
+        f"🏆 `{net_win}`\n\n"
+        f"⚽ {sport}\n"
+        f"🎮 _{eventos[:200]}_"
+    )
 
 
-# 📧 REVISAR GMAIL
+# ------------------ GMAIL ------------------
+
 async def revisar_correos_gmail():
 
     try:
@@ -263,10 +256,9 @@ async def revisar_correos_gmail():
         mail.login(gmail_user, gmail_pass)
         mail.select("inbox")
 
-        # Buscar ambos asuntos usando OR
         status, mensajes = mail.search(
             None,
-            '(UNSEEN OR (SUBJECT "Casino High Win Alert") (SUBJECT "Sport High Win Alert"))'
+            '(UNSEEN (OR (SUBJECT "Casino High Win Alert") (SUBJECT "Sport High Win Alert")))'
         )
 
         for num in mensajes[0].split():
@@ -275,46 +267,42 @@ async def revisar_correos_gmail():
             msg = email.message_from_bytes(data[0][1])
 
             cuerpo = extraer_cuerpo_email(msg)
-
-            # Puedes decidir aquí cómo formatear según el asunto
             asunto = msg["subject"]
+
+            mensaje = None
 
             if "Casino High Win Alert" in asunto:
                 mensaje = formatear_alerta_casino(cuerpo)
+
             elif "Sport High Win Alert" in asunto:
                 mensaje = formatear_alerta_sport(cuerpo)
-            else:
-                continue
 
-            await client.send_message(
-                group_id_to_forward,
-                mensaje,
-                parse_mode="Markdown"
-            )
+            if mensaje:
+                await client.send_message(
+                    group_id_to_forward,
+                    mensaje,
+                    parse_mode="Markdown"
+                )
 
-            # marcar como leído
             mail.store(num, '+FLAGS', '\\Seen')
 
         mail.logout()
 
     except Exception as e:
-        print("Error leyendo Gmail:", e)
+        print("Error Gmail:", e)
 
 
 async def loop_correos():
 
     while True:
-
         await revisar_correos_gmail()
-
         await asyncio.sleep(15)
 
 
 async def main():
 
     await client.start()
-
-    print("Bot en funcionamiento...")
+    print("Bot activo 🚀")
 
     client.loop.create_task(loop_correos())
 
@@ -322,5 +310,4 @@ async def main():
 
 
 with client:
-
     client.loop.run_until_complete(main())
