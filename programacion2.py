@@ -212,41 +212,46 @@ def formatear_alerta_casino(cuerpo):
         match = re.search(pattern, cuerpo, re.IGNORECASE)
         return match.group(1).strip() if match else "N/A"
 
-    return (
+    player_id = buscar(r'Player ID:\s*(\d+)')
+    bet_id = buscar(r'Bet ID:\s*(\d+)')
+    bet_amount = buscar(r'Bet Amount:\s*([\d\.]+)')
+    net_win = buscar(r'Net Win Amount:\s*([\d\.]+)')
+    game = buscar(r'Game/Event:\s*(.+)')
+
+    mensaje = (
         "🚨 *CASINO HIGH WIN ALERT* 🚨\n\n"
-        f"👤 `{buscar(r'Player ID:\s*(\\d+)')}`\n"
-        f"💰 `{buscar(r'Bet Amount:\s*([\\d\\.]+)')}`\n"
-        f"🏆 `{buscar(r'Net Win Amount:\s*([\\d\\.]+)')}`"
+        f"👤 *Player:* `{player_id}`\n"
+        f"🎟️ *Bet ID:* `{bet_id}`\n\n"
+        f"💰 *Apuesta:* `{bet_amount}`\n"
+        f"🏆 *Ganancia:* `{net_win}`\n\n"
+        f"🎮 *Juego:* _{game}_"
     )
 
+    return mensaje
 
 # SPORT
+# 🚨 NUEVA FUNCIÓN ALERTA SPORT
 def formatear_alerta_sport(cuerpo):
 
-    def buscar(label):
-        match = re.search(rf"{label}:\s*\n(.+)", cuerpo, re.IGNORECASE)
+    def buscar(pattern):
+        match = re.search(pattern, cuerpo, re.IGNORECASE)
         return match.group(1).strip() if match else "N/A"
 
-    player_id = buscar("Player ID")
-    username = buscar("Username")
-    bet_id = buscar("Bet ID")
-    bet_amount = buscar("Bet Amount")
-    net_win = buscar("Net Win Amount")
-    sport = buscar("Sport")
-    eventos = buscar("Game/Event")
+    player_id = buscar(r'Player ID:\s*(\d+)')
+    bet_id = buscar(r'Bet ID:\s*(\d+)')
+    bet_amount = buscar(r'Bet Amount:\s*([\d\.]+)')
+    net_win = buscar(r'Net Win Amount:\s*([\d\.]+)')
 
-    return (
+
+    mensaje = (
         "🚨 *SPORT HIGH WIN ALERT* 🚨\n\n"
-        f"👤 `{player_id}`\n"
-        f"📧 `{username}`\n"
-        f"🎟️ `{bet_id}`\n\n"
-        f"💰 `{bet_amount}`\n"
-        f"🏆 `{net_win}`\n\n"
-        f"⚽ {sport}\n"
-        f"🎮 _{eventos[:200]}_"
+        f"👤 *Player:* `{player_id}`\n"
+        f"🎟️ *Bet ID:* `{bet_id}`\n\n"
+        f"💰 *Apuesta:* `{bet_amount}`\n"
+        f"🏆 *Ganancia:* `{net_win}`\n\n"
     )
 
-
+    return mensaje
 # ------------------ GMAIL ------------------
 
 async def revisar_correos_gmail():
