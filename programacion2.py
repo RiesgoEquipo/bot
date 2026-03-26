@@ -259,14 +259,14 @@ def formatear_alerta_casino(cuerpo):
 async def revisar_correos_gmail():
 
     try:
-
         mail = imaplib.IMAP4_SSL("imap.gmail.com")
         mail.login(gmail_user, gmail_pass)
         mail.select("inbox")
 
+        # Buscar ambos asuntos usando OR
         status, mensajes = mail.search(
             None,
-            '(UNSEEN SUBJECT "Casino High Win Alert")'
+            '(UNSEEN OR (SUBJECT "Casino High Win Alert") (SUBJECT "Sport High Win Alert"))'
         )
 
         for num in mensajes[0].split():
@@ -276,7 +276,15 @@ async def revisar_correos_gmail():
 
             cuerpo = extraer_cuerpo_email(msg)
 
-            mensaje = formatear_alerta_casino(cuerpo)
+            # Puedes decidir aquí cómo formatear según el asunto
+            asunto = msg["subject"]
+
+            if "Casino High Win Alert" in asunto:
+                mensaje = formatear_alerta_casino(cuerpo)
+            elif "Sport High Win Alert" in asunto:
+                mensaje = formatear_alerta_sport(cuerpo)
+            else:
+                continue
 
             await client.send_message(
                 group_id_to_forward,
