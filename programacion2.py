@@ -173,7 +173,7 @@ async def check_services_status(event):
 
 # ------------------ SHERLOCK ------------------
 
-@client.on(events.NewMessage(pattern=r'^/nick\s+(.+)', chats=[group_id_to_forward]))
+@client.on(events.NewMessage(pattern=r'^/nicks\s+(.+)', chats=[group_id_to_forward]))
 async def handler_sherlock(event):
 
     nick = event.pattern_match.group(1).strip()
