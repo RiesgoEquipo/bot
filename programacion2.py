@@ -252,7 +252,7 @@ def formatear_alerta_sport(cuerpo):
     )
 
     return mensaje
-# ------------------ GMAIL ------------------
+# ------------------ GMAIL -----------------
 
 async def revisar_correos_gmail():
 
