@@ -136,6 +136,49 @@ def get_transbank_status():
         return f"⚠️ *Transbank*: Error ({e})"
 
 
+def get_mach_status():
+    try:
+        response = requests.get(
+            "https://mach.statuspage.io/api/v2/status.json", timeout=5)
+
+        data = response.json()
+        description = data["status"]["description"]
+        indicator = data["status"]["indicator"]
+
+        emoji = {
+            "none": "🟢",
+            "minor": "🟡",
+            "major": "🔴",
+            "critical": "❌",
+            "maintenance": "🟠"
+        }.get(indicator, "❓")
+
+        return f"{emoji} *MACH*: {description}"
+    except Exception as e:
+        return f"⚠️ *MACH*: Error ({e})"
+
+
+def get_mercadopago_status():
+    try:
+        response = requests.get(
+            "https://mercadopago.statuspage.io/api/v2/status.json", timeout=5)
+
+        data = response.json()
+        description = data["status"]["description"]
+        indicator = data["status"]["indicator"]
+
+        emoji = {
+            "none": "🟢",
+            "minor": "🟡",
+            "major": "🔴",
+            "critical": "❌"
+        }.get(indicator, "❓")
+
+        return f"{emoji} *MercadoPago*: {description}"
+    except Exception as e:
+        return f"⚠️ *MercadoPago*: Error ({e})"
+
+
 def get_skinsback_status():
     try:
         response = requests.get("https://skinsback.com", timeout=5)
@@ -162,6 +205,8 @@ async def check_services_status(event):
         get_astropay_status(),
         get_kushki_status(),
         get_transbank_status(),
+        get_mach_status(),
+        get_mercadopago_status(),
         get_skinsback_status(),
         get_coinpaid_status()
     ]
@@ -313,6 +358,9 @@ async def main():
 
     await client.run_until_disconnected()
 
+
+with client:
+    client.loop.run_until_complete(main())
 
 with client:
     client.loop.run_until_complete(main())
