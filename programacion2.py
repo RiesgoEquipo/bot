@@ -56,23 +56,6 @@ allowed_groups = [
 
 # ------------------ STATUS SERVICIOS ------------------
 
-def get_truora_status():
-    try:
-        url = "https://stats.uptimerobot.com/api/getMonitorList/VG3Y9Cgwwq?page=1"
-        response = requests.get(url, timeout=5)
-        data = response.json()
-        counts = data.get("statistics", {}).get("counts", {})
-        up = counts.get("up", 0)
-        down = counts.get("down", 0)
-        paused = counts.get("paused", 0)
-
-        emoji = "🟢" if down == 0 else "🟡" if up > 0 else "🔴"
-
-        return f"{emoji} *Truora*: {up} arriba, {down} abajo, {paused} pausado(s)"
-    except Exception as e:
-        return f"⚠️ *Truora*: Error ({e})"
-
-
 def get_astropay_status():
     try:
         response = requests.get(
@@ -118,22 +101,31 @@ def get_kushki_status():
 def get_transbank_status():
     try:
         response = requests.get(
-            "https://status.transbankdevelopers.cl/api/v2/status.json", timeout=5)
+            "https://status.transbankdevelopers.cl/api/v2/components.json", timeout=5)
 
         data = response.json()
-        description = data["status"]["description"]
-        indicator = data["status"]["indicator"]
+        components = data.get("components", [])
 
-        emoji = {
-            "none": "🟢",
-            "minor": "🟡",
-            "major": "🔴",
-            "critical": "❌"
-        }.get(indicator, "❓")
+        webpay_components = [c for c in components if "Webpay" in c["name"]]
 
-        return f"{emoji} *Transbank*: {description}"
+        if not webpay_components:
+            return "❓ *WebPay*: No encontrado"
+
+        status_map = {
+            "operational": "🟢",
+            "degraded_performance": "🟡",
+            "partial_outage": "🟠",
+            "major_outage": "🔴"
+        }
+
+        statuses = []
+        for comp in webpay_components:
+            emoji = status_map.get(comp["status"], "❓")
+            statuses.append(f"{emoji} {comp['name']}")
+
+        return "\n".join(statuses)
     except Exception as e:
-        return f"⚠️ *Transbank*: Error ({e})"
+        return f"⚠️ *WebPay*: Error ({e})"
 
 
 def get_mach_status():
@@ -201,7 +193,6 @@ def get_coinpaid_status():
 async def check_services_status(event):
 
     statuses = [
-        get_truora_status(),
         get_astropay_status(),
         get_kushki_status(),
         get_transbank_status(),
@@ -358,9 +349,6 @@ async def main():
 
     await client.run_until_disconnected()
 
-
-with client:
-    client.loop.run_until_complete(main())
 
 with client:
     client.loop.run_until_complete(main())
