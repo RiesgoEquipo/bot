@@ -187,7 +187,52 @@ def get_coinpaid_status():
         return "🟢 *CoinPaid*: Activo" if response.status_code == 200 else f"🔴 HTTP {response.status_code}"
     except Exception as e:
         return f"⚠️ *CoinPaid*: Error ({e})"
+        
+def get_alps_chile_status():
+    try:
+        response = requests.get(
+            "https://status.alps.cl/api/v2/components.json",
+            timeout=5
+        )
 
+        response.raise_for_status()
+
+        data = response.json()
+        components = data.get("components", [])
+
+        status_map = {
+            "operational": "🟢",
+            "degraded_performance": "🟡",
+            "partial_outage": "🟠",
+            "major_outage": "🔴",
+            "maintenance": "🟣"
+        }
+
+        # Buscar solamente componentes relacionados con Chile
+        chile_components = [
+            component for component in components
+            if "chile" in component.get("name", "").lower()
+        ]
+
+        if not chile_components:
+            return "❓ *ALPS Chile*: No se encontraron servicios"
+
+        statuses = []
+
+        for component in chile_components:
+            name = component.get("name", "Desconocido")
+            status = component.get("status", "unknown")
+
+            emoji = status_map.get(status, "❓")
+
+            statuses.append(
+                f"{emoji} *ALPS {name}*"
+            )
+
+        return "\n".join(statuses)
+
+    except Exception as e:
+        return f"⚠️ *ALPS Chile*: Error ({e})"
 
 @client.on(events.NewMessage(pattern=r'^/servicios$', chats=allowed_groups))
 async def check_services_status(event):
@@ -200,6 +245,7 @@ async def check_services_status(event):
         get_mercadopago_status(),
         get_skinsback_status(),
         get_coinpaid_status()
+        get_alps_chile_status()
     ]
 
     message = "**Estado actual de servicios:**\n\n" + "\n".join(statuses)
