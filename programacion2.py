@@ -208,31 +208,33 @@ def get_alps_chile_status():
             "maintenance": "🟣"
         }
 
-        # Buscar solamente componentes relacionados con Chile
-        chile_components = [
+        # Filtrar solo componentes que son servicios reales de ALPS (no países ni grupos)
+        alps_services = [
             component for component in components
-            if "chile" in component.get("name", "").lower()
+            if not component.get("group", False) and  # No grupos
+            any(keyword in component.get("name", "").lower()
+                for keyword in ["alps", "api", "dashboard"])
         ]
 
-        if not chile_components:
+        if not alps_services:
             return "❓ *ALPS Chile*: No se encontraron servicios disponibles"
 
         statuses = []
 
-        for component in chile_components:
+        for component in alps_services:
             name = component.get("name", "Desconocido")
             status = component.get("status", "unknown")
 
             emoji = status_map.get(status, "❓")
 
             statuses.append(
-                f"{emoji} *ALPS {name}*"
+                f"{emoji} *{name}*"
             )
 
         return "\n".join(statuses)
 
     except Exception as e:
-        return f"⚠️ *ALPS Chile*: Error ({e})"
+        return f"⚠️  *ALPS Chile*: Error {e})"
 
 @client.on(events.NewMessage(pattern=r'^/servicios$', chats=allowed_groups))
 async def check_services_status(event):
