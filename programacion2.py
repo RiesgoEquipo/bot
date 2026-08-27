@@ -215,7 +215,7 @@ def get_alps_chile_status():
         ]
 
         if not chile_components:
-            return "❓ *ALPS Chile*: No se encontraron servicios"
+            return "❓ *ALPS Chile*: No se encontraron servicios disponibles"
 
         statuses = []
 
