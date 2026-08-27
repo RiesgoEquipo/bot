@@ -244,7 +244,7 @@ async def check_services_status(event):
         get_mach_status(),
         get_mercadopago_status(),
         get_skinsback_status(),
-        get_coinpaid_status()
+        get_coinpaid_status(),
         get_alps_chile_status()
     ]
 
